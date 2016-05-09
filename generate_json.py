@@ -1,5 +1,6 @@
 import os
 import random
+import json
 
 folder = "smali_test/"
 
@@ -18,21 +19,25 @@ class SmaliJson(object):
         self.edges = list()
         self.edge_id = 0
         self.coords = dict()
+        self.json = json.load(open('template.json', 'rt'))
 
     def parseSmali(self):
         for file in self.files:
             with open(file, 'rt') as fd:
                 for line in fd.readlines():
                     line = line.strip()
-                    if line.startswith(".class"):
+                    if line.startswith('.super'):
+                        node = self.addSuperNode(node, line.split(' ')[-1])
+
+                    if line.startswith('.class'):
                         name = line.split(' ')[-1]
-                        classname = self.addNode(name)
+                        node = self.addNode(name)
 
                     if line.startswith("invoke-static") or \
                        line.startswith("invoke-super") or \
                        line.startswith("invoke-direct"):
                         cname, method = self._parseInvoke(line)
-                        self.addEdge(classname, cname, method)
+                        self.addEdge(node['name'], cname, method)
 
     @staticmethod
     def _parseInvoke(line):
@@ -44,12 +49,17 @@ class SmaliJson(object):
         classname = name.split('->')[0][1:-1].replace('/', '.')
         return classname, method
 
+    def addSuperNode(self, node, superclass):
+        name = superclass[1:-1].replace('/', '.')
+        node['super'] = name
+        return node
 
     def addNode(self, name):
         name = name[1:-1].replace('/', '.')
-        self.nodes.append({"name": name, "id": "n%d" % self.node_id})
+        node = {"name": name, "id": "n%d" % self.node_id}
+        self.nodes.append(node)
         self.node_id += 1
-        return name
+        return node
 
     def getNodeId(self, name):
         for node in self.nodes:
@@ -81,49 +91,69 @@ class SmaliJson(object):
     def showEdges(self):
         print self.edges
 
-    def _generate_coords(self):
-        rand_x = random.randint(0, 100)
-        rand_y = random.randint(0, 100)
-        if self.coords.has_key(rand_x):
-            if self.coords[rand_x].has_key(rand_y):
-                return self._generate_coords
-            self.coords[rand_x][rand_y] = True
-        else:
-            self.coords[rand_x] = dict()
-            self.coords[rand_x][rand_y] = True
-
-        return rand_x, rand_y
     def generateJson(self, filename):
 
-        with open(filename, 'wt') as fd:
-            fd.write('data = { "nodes": [\n')
+        for node in self.nodes:
+            self.json['class'].append({
+                    "id" : node['id'],
+                    "type" : "owl:Class"
+                  })
 
-            for node in self.nodes:
-                x, y = self._generate_coords()
-                fd.write('{"borderColor": "#617db4", \n \
-                          "color": "#617db4", \n \
-                          "id": "%s",  \n \
-                          "label": "%s",  \n \
-                          "size": 0,  \n \
-                          "type": "circle",  \n \
-                          "x": %d,  \n \
-                          "y": %d },' % (node['id'], node['name'], 
-                                         x, y))
-            fd.write('], "edges": [')
-            
-            for edge in self.edges:
-                label = ''
-                edge['name'] = list(set(edge['name']))
-                label = " & ".join(edge['name'])
-                
-                fd.write('\n \
-                        {"id": "%s", \n \
-                        "label": "%s", \n \
-                        "source": "%s", \n \
-                        "target": "%s" },' % (edge['id'], label,
-                                                  edge['from'], edge['to']))
-            fd.write(']}\n')
+            self.json['classAttribute'].append({
+                    "id" : node['id'],
+                    "label" : {
+                      "IRI-based" : node['name'],
+                      "undefined" : node['name']
+                    },
+                    "iri" : "http://xmlns.com/foaf/0.1/OnlineAccount",
+                    "comment" : {
+                      "undefined" : "An online account."
+                    },
+                    "isDefinedBy" : "http://xmlns.com/foaf/0.1/",
+                    "subClasses" : [ ],
+                    "annotations" : {
+                      "term_status" : [ {
+                        "identifier" : "term_status",
+                        "language" : "undefined",
+                        "value" : "testing",
+                        "type" : "label"
+                      } ]
+                    },
+                   #"instances" : 0
+                  })
 
+        for edge in self.edges:
+            self.json['property'].append(
+                {
+                "id" : edge['id'],
+                "type" : "owl:objectProperty"
+              }
+                )
+            self.json['propertyAttribute'].append(
+                 {
+                    "id" : edge['id'],
+                    "label" : {
+                      "IRI-based" : ", ".join(list(set(edge['name']))),
+                      "undefined" : ", ".join(list(set(edge['name'])))
+                    },
+                    #"iri" : "http://xmlns.com/foaf/0.1/workplaceHomepage",
+                    #"comment" : {
+                    #  "undefined" : "Comentario"
+                    #},
+                    #"isDefinedBy" : "http://xmlns.com/foaf/0.1/",
+                    #"annotations" : {
+                    #  "term_status" : [ {
+                    #    "identifier" : "term_status",
+                    #    "language" : "undefined",
+                    #    "value" : "testing",
+                    #    "type" : "label"
+                    #  } ]
+                    #},
+                    "domain" : edge['from'],
+                    "range" : edge['to']
+                  })
+
+        json.dump(self.json, open('secondGraph.json', 'wt'))
 
 def main():
     files = generate_filelist(folder)

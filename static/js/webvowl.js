@@ -429,7 +429,7 @@ webvowl = function(t) {
             var e = 4,
                 a = this,
                 o = a.actualRadius;
-            this.styleClass("equivalentclass").type("owl:equivalentClass"), this.actualRadius = function() {
+            this.styleClass("equivalentclass").type("Class"), this.actualRadius = function() {
                 return o() + e
             }, this.draw = function(t) {
                 var r = a.collectCssClasses();
@@ -1924,7 +1924,7 @@ webvowl = function(t) {
                 return y
             }, k.datatypePropertyCount = function() {
                 return m
-            }, k.objectPropertyCount = function() {
+            }, k.methodsCount = function() {
                 return b
             }, k.propertyCount = function() {
                 return x

@@ -20,33 +20,17 @@
       "language": "label"
     },
     "other": {
-      "someIdentifier": [
-        {
-          "identifier": "someIdentifier",
-          "language": "undefined",
-          "value": "http://an.iri/",
-          "type": "iri"
-        }
-      ],
-      "someOtherIdentifier": [
-        {
-          "identifier": "someOtherIdentifier",
-          "language": "undefined",
-          "value": "Some person",
-          "type": "label"
-        }
-      ]
     }
   },
   "metrics" : {
-    "classCount" : 40,
-    "datatypeCount" : 13,
-    "objectPropertyCount" : 23,
-    "datatypePropertyCount" : 13,
-    "propertyCount" : 36,
-    "nodeCount" : 53,
-    "axiomCount" : 216,
-    "individualCount" : 8
+    "classCount" : 0,
+    "datatypeCount" : 0,
+    "objectPropertyCount" : 0,
+    "datatypePropertyCount" : 0,
+    "propertyCount" : 0,
+    "nodeCount" : 0,
+    "axiomCount" : 0,
+    "individualCount" : 0
   },
   "class": [ ],
   "classAttribute": [ ],

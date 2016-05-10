@@ -1,8 +1,6 @@
 import os
-import random
 import json
-
-folder = "smali_test/"
+import argparse
 
 nodes = list()
 
@@ -17,17 +15,17 @@ well_known_classes = {
     "java.lang.Thread": {"reduced_name": "Thread", "url": "https://docs.oracle.com/javase/7/docs/api/java/lang/Thread.html"},
 }
 
-def generate_filelist(path):
-    result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(path) for f in filenames]
-    return result
-
 class SmaliJson(object):
-    def __init__(self, files):
+    def __init__(self, folder):
         self.nodes = list()
         self.node_id = 0
         self.super_nodes = list()
         self.supernode_id = 0
-        self.files = files
+        self.folder = folder
+        self.from_smali = True
+        self.from_apk = False
+        self.from_dex = False
+        self.files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder) for f in filenames]
         self.edges = list()
         self.edge_id = 0
         self.coords = dict()
@@ -120,11 +118,16 @@ class SmaliJson(object):
         print self.edges
 
     def generateJson(self, filename):
+        #Title
+        self.json["header"]["title"]["undefined"] = "From Smali folder %s" % self.folder
+        #Statistics
+        self.json['metrics']["classCount"] = len(self.nodes)
+        self.json['metrics']["methodCount"] = len(self.edges)
         #Supernodes
         for snode in self.super_nodes:
             supernode = {
                     "id" : snode['id'],
-                    "type" : "owl:equivalentClass"
+                    "type" : "Class"
                   }
             self.json['class'].append(supernode)
 
@@ -142,7 +145,7 @@ class SmaliJson(object):
         for node in self.nodes:
             self.json['class'].append({
                     "id" : node['id'],
-                    "type" : "owl:equivalentClass"
+                    "type" : "Class"
                   })
 
             class_attribute = {
@@ -211,13 +214,37 @@ class SmaliJson(object):
         json.dump(self.json, open(filename, 'wt'))
 
 def main():
-    files = generate_filelist(folder)
-    sm = SmaliJson(files)
-    sm.parseSmali()
+    parser = argparse.ArgumentParser(description='Generate Graph definition for APK/DEX')
+    
+    parser.add_argument('-s', '--smali', dest="smali", \
+        help='Folder with smali code already decompressed', 
+        default=None)
+
+    parser.add_argument('-a', '--apk', dest="apk", \
+        help='APK to decompress and generate graph (androguard required)', 
+        default=None)
+
+    #parser.add_argument('-d', '--dex', dest="dex", \
+    #    help='DEX to decompress and generate graph (androguard required)', 
+    #    default=None)
+
+    parser.add_argument('-o', '--output', dest="output", \
+        help='File to write the JSON file. Default graph.json', 
+        default="graph.json")    
 
 
-    sm.generateJson('graph.json')
-    print "Graph generate in file graph.json, now you can load it using graph.html"
+    args = parser.parse_args()
+    if args.smali:
+        print "Generating graph from SMALI folder %s" % args.smali
+        #files = generate_filelist(folder)
+        sm = SmaliJson(args.smali)
+        sm.parseSmali()
+        sm.generateJson(args.output)
+        print "Graph generate in file %s, now you can load it using graph.html" % (args.output)
+        return
+    elif args.apk:
+        print "Not implemented yet"
+
 
 if __name__ == '__main__':
     main()

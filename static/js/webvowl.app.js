@@ -130,7 +130,7 @@ webvowl.app = function(t) {
                 }
 
                 function o(t, n) {
-                    t = t || {}, e.select("#classCount").text(t.classCount || n.classCount()), e.select("#objectPropertyCount").text(t.objectPropertyCount || n.objectPropertyCount()), e.select("#datatypePropertyCount").text(t.datatypePropertyCount || n.datatypePropertyCount()), e.select("#individualCount").text(t.totalIndividualCount || n.totalIndividualCount()), e.select("#nodeCount").text(n.nodeCount()), e.select("#edgeCount").text(n.edgeCount())
+                    t = t || {}, e.select("#classCount").text(t.classCount || n.classCount()), e.select("#methodsCount").text(t.methodsCount || n.methodsCount()), e.select("#datatypePropertyCount").text(t.datatypePropertyCount || n.datatypePropertyCount()), e.select("#individualCount").text(t.totalIndividualCount || n.totalIndividualCount()), e.select("#nodeCount").text(n.nodeCount()), e.select("#edgeCount").text(n.edgeCount())
                 }
 
                 function s(t) {
@@ -188,7 +188,7 @@ webvowl.app = function(t) {
 
                 function y(t) {
                     m(), f(e.select("#name"), t.labelForCurrentLanguage(), t.iri());
-                    var n = e.select("#classEquivUri");
+                    var n = e.select("#superClassUri");
                     b(n, t.equivalents()), e.select("#typeNode").text(t.type()), b(e.select("#individuals"), t.individuals());
                     var r = e.select("#disjointNodes"),
                         i = e.select(r.node().parentNode);

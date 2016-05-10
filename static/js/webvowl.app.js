@@ -563,7 +563,7 @@ webvowl.app = function(t) {
                 function v(t, n, r) {
                     x.classed("hidden", t);
                     var i = e.select("#error-info");
-                    r ? i.text(r) : i.html('Ontology could not be loaded.<br>Is it a valid OWL ontology? Please check with <a target="_blank"href="http://mowl-power.cs.man.ac.uk:8080/validator/">OWL Validator</a>.');
+                    r ? i.text(r) : i.html('Open the APK graph json file clicking in the bottom LOAD');
                     var a = !n,
                         o = e.select("#error-description-button").classed("hidden", a).datum().open;
                     e.select("#error-description-container").classed("hidden", a || !o), e.select("#error-description").text(n || "")
@@ -573,7 +573,7 @@ webvowl.app = function(t) {
                     w.classed("hidden", !0)
                 }
                 var y, m = {},
-                    b = "foaf",
+                    b = "graph",
                     x = e.select("#loading-error"),
                     w = e.select("#loading-progress"),
                     C = {};
@@ -605,7 +605,7 @@ webvowl.app = function(t) {
         }
         var a = {
             "./benchmark.json": 83,
-            "./foaf.json": 84,
+            "./graph.json": 84,
             "./goodrelations.json": 85,
             "./muto.json": 86,
             "./ontovibe.json": 87,
@@ -621,7 +621,7 @@ webvowl.app = function(t) {
         t.exports = n.p + "data/benchmark.json?d5d07972ddf0459c397916c8001e761c"
     },
     84: function(t, e, n) {
-        t.exports = n.p + "data/foaf.json?c42b65921e9390d684730607e060b3d6"
+        t.exports = n.p + "graph.json"
     },
     85: function(t, e, n) {
         t.exports = n.p + "data/goodrelations.json?f0cab2e1d6df87859caf716c78c16942"

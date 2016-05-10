@@ -1,3 +1,5 @@
+# Live example
+http://plutec.github.io/smali_graph/
 # Installation
 ```
 git clone https://github.com/plutec/smali_graph.git

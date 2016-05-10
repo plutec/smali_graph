@@ -1,4 +1,4 @@
-# Instalation
+# Installation
 ```
 git clone https://github.com/plutec/smali_graph.git
 ```

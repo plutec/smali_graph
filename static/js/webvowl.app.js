@@ -642,3 +642,5 @@ webvowl.app = function(t) {
         t.exports = n.p + "data/template.json?fcb0957581dd99fe6e67635fae53f180"
     }
 });
+
+document.getElementById("github-button").onclick=function(){ document.location="https://github.com/plutec/smali_graph"};

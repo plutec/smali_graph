@@ -1,10 +1,21 @@
 import os
 import random
+import json
 
 folder = "smali_test/"
 
 nodes = list()
 
+well_known_classes = {
+    'java.lang.Object': {'reduced_name':'Object', 'url': 'http://developer.android.com/intl/es/reference/java/lang/Object.html'},
+    'android.telephony.PhoneStateListener': {'reduced_name':'PhoneStateListener', 'url': 'http://developer.android.com/reference/android/telephony/PhoneStateListener.html'},
+    'android.app.admin.DeviceAdminReceiver': {'reduced_name': 'DeviceAdminReceiver', 'url':'http://developer.android.com/reference/android/app/admin/DeviceAdminReceiver.html'},
+    'android.app.Service': {'reduced_name': 'Service', 'url': 'http://developer.android.com/reference/android/app/Service.html'},
+    'android.content.BroadcastReceiver': {"reduced_name": "BroadcastReceiver", "url": "http://developer.android.com/reference/android/content/BroadcastReceiver.html"},
+    "android.app.Activity": {"reduced_name": "Activity", "url": "http://developer.android.com/reference/android/app/Activity.html"},
+    "android.os.Binder": {"reduced_name": "Binder", "url": "http://developer.android.com/reference/android/os/Binder.html"},
+    "java.lang.Thread": {"reduced_name": "Thread", "url": "https://docs.oracle.com/javase/7/docs/api/java/lang/Thread.html"},
+}
 
 def generate_filelist(path):
     result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(path) for f in filenames]
@@ -14,25 +25,31 @@ class SmaliJson(object):
     def __init__(self, files):
         self.nodes = list()
         self.node_id = 0
+        self.super_nodes = list()
+        self.supernode_id = 0
         self.files = files
         self.edges = list()
         self.edge_id = 0
         self.coords = dict()
+        self.json = json.load(open('template.json', 'rt'))
 
     def parseSmali(self):
         for file in self.files:
             with open(file, 'rt') as fd:
                 for line in fd.readlines():
                     line = line.strip()
-                    if line.startswith(".class"):
+                    if line.startswith('.super'):
+                        node = self.addSuperNode(node, line.split(' ')[-1])
+
+                    if line.startswith('.class'):
                         name = line.split(' ')[-1]
-                        classname = self.addNode(name)
+                        node = self.addNode(name)
 
                     if line.startswith("invoke-static") or \
                        line.startswith("invoke-super") or \
                        line.startswith("invoke-direct"):
                         cname, method = self._parseInvoke(line)
-                        self.addEdge(classname, cname, method)
+                        self.addEdge(node['name'], cname, method)
 
     @staticmethod
     def _parseInvoke(line):
@@ -44,12 +61,33 @@ class SmaliJson(object):
         classname = name.split('->')[0][1:-1].replace('/', '.')
         return classname, method
 
+    def addSuperNode(self, node, superclass):
+        name = superclass[1:-1].replace('/', '.')
+        node['super'] = name
+        snode_id = None
+        url_object = None
+        if well_known_classes.has_key(name):
+            url_object = well_known_classes[name]['url']
+            name = well_known_classes[name]['reduced_name']
+        for snode in self.super_nodes:
+            if snode['name'] == name:
+                snode_id = snode['id']
+                node['super'] = snode_id
+                break
+        if snode_id == None:
+            snode = {"name": name, "id": "sn_%d" % self.supernode_id,
+                     "url": url_object}
+            self.supernode_id += 1
+            node['super'] = snode['id']
+            self.super_nodes.append(snode)
+        return node
 
     def addNode(self, name):
         name = name[1:-1].replace('/', '.')
-        self.nodes.append({"name": name, "id": "n%d" % self.node_id})
+        node = {"name": name, "id": "n%d" % self.node_id}
+        self.nodes.append(node)
         self.node_id += 1
-        return name
+        return node
 
     def getNodeId(self, name):
         for node in self.nodes:
@@ -81,57 +119,105 @@ class SmaliJson(object):
     def showEdges(self):
         print self.edges
 
-    def _generate_coords(self):
-        rand_x = random.randint(0, 100)
-        rand_y = random.randint(0, 100)
-        if self.coords.has_key(rand_x):
-            if self.coords[rand_x].has_key(rand_y):
-                return self._generate_coords
-            self.coords[rand_x][rand_y] = True
-        else:
-            self.coords[rand_x] = dict()
-            self.coords[rand_x][rand_y] = True
-
-        return rand_x, rand_y
     def generateJson(self, filename):
+        #Supernodes
+        for snode in self.super_nodes:
+            supernode = {
+                    "id" : snode['id'],
+                    "type" : "owl:equivalentClass"
+                  }
+            self.json['class'].append(supernode)
 
-        with open(filename, 'wt') as fd:
-            fd.write('data = { "nodes": [\n')
+            class_attribute = {
+                "id" : snode['id'],
+                "label" : {
+                  "IRI-based" : snode['name']
+                },
+                "iri" : snode['url'],
+                "attributes" : [ "equivalent" ],
+                #"instances" : 0
+              }
+            self.json['classAttribute'].append(class_attribute)
+        #Nodes
+        for node in self.nodes:
+            self.json['class'].append({
+                    "id" : node['id'],
+                    "type" : "owl:equivalentClass"
+                  })
 
-            for node in self.nodes:
-                x, y = self._generate_coords()
-                fd.write('{"borderColor": "#617db4", \n \
-                          "color": "#617db4", \n \
-                          "id": "%s",  \n \
-                          "label": "%s",  \n \
-                          "size": 0,  \n \
-                          "type": "circle",  \n \
-                          "x": %d,  \n \
-                          "y": %d },' % (node['id'], node['name'], 
-                                         x, y))
-            fd.write('], "edges": [')
-            
-            for edge in self.edges:
-                label = ''
-                edge['name'] = list(set(edge['name']))
-                label = " & ".join(edge['name'])
-                
-                fd.write('\n \
-                        {"id": "%s", \n \
-                        "label": "%s", \n \
-                        "source": "%s", \n \
-                        "target": "%s" },' % (edge['id'], label,
-                                                  edge['from'], edge['to']))
-            fd.write(']}\n')
+            class_attribute = {
+                    "id" : node['id'],
+                    "label" : {
+                      "IRI-based" : node['name'],
+                      "undefined" : node['name']
+                    },
+                    #"iri" : "http://xmlns.com/foaf/0.1/OnlineAccount",
+                    #"comment" : {
+                    #  "undefined" : "An online account."
+                    #},
+                    #"isDefinedBy" : "http://xmlns.com/foaf/0.1/",
+                    #"subClasses" : [ ],
+                    #"annotations" : {
+                    #  "term_status" : [ {
+                    #    "identifier" : "term_status",
+                    #    "language" : "undefined",
+                    #    "value" : "testing",
+                    #    "type" : "label"
+                    #  } ]
+                    #},
+                   #"instances" : 0
+                   #"equivalent" : [ self.getNodeId(node['super']) ]
+                  }
+            if node.has_key('super'):
+                class_attribute['attributes'] = [ "equivalent" ]
+                class_attribute['equivalent'] = [ node['super'] ]
+            #print class_attribute
+            self.json['classAttribute'].append(class_attribute)
 
+        for edge in self.edges:
+
+            counter = 0
+            for name in list(set(edge['name'])):
+                propert = {
+                                "id" : "%s_%d" % (edge['id'], counter),
+                                "type" : "owl:objectProperty"
+                                }
+                self.json['property'].append(propert)
+                property_attribute = {
+                        "id" :  "%s_%d" % (edge['id'], counter),
+                        "label" : {
+                          "IRI-based" : name,
+                          "undefined" : name
+                        },
+                        #"iri" : "http://xmlns.com/foaf/0.1/workplaceHomepage",
+                        #"comment" : {
+                        #  "undefined" : "Comentario"
+                        #},
+                        #"isDefinedBy" : "http://xmlns.com/foaf/0.1/",
+                        #"annotations" : {
+                        #  "term_status" : [ {
+                        #    "identifier" : "term_status",
+                        #    "language" : "undefined",
+                        #    "value" : "testing",
+                        #    "type" : "label"
+                        #  } ]
+                        #},
+                        "domain" : edge['from'],
+                        "range" : edge['to']
+                      }
+                counter += 1
+                self.json['propertyAttribute'].append(property_attribute)
+
+        json.dump(self.json, open(filename, 'wt'))
 
 def main():
     files = generate_filelist(folder)
     sm = SmaliJson(files)
     sm.parseSmali()
-    #sm.showNodes()
-    #sm.showEdges()
+
+
     sm.generateJson('graph.json')
+    print "Graph generate in file graph.json, now you can load it using graph.html"
 
 if __name__ == '__main__':
     main()

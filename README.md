@@ -5,7 +5,7 @@ git clone https://github.com/plutec/smali_graph.git
 # Execution
 First you must generate a json file with your class structure. This can be do with the script **generate_json.py** and passing as argument the folder with the smali code.
 ```
-$ python generate_json.py smali_test/
+$ python generate_json.py -s smali_test/
 ```
 Second, open with your browser the file **graph.html** or with double-clicking.
 
